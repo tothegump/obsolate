@@ -33,7 +33,20 @@ class Request(object):
         self.path = add_slash(self._environ.get('PATH_INFO', ''))
         self.method = self._environ.get('REQUEST_METHOD', 'GET')
         self.query = self._environ.get('QUERY_STRING', '')
+        self.content_length = 0
+        try:
+            self.content_length = int(self._environ.get('CONTENT_LENGTH', '0'))
+        except ValueError:
+            pass
+
         self.GET = build_query_dict(self.query)
+
+        if self._environ.get('CONTENT_TYPE', '').startswith('multipart'):
+            raise Exception("Sorry, uploads are not suported.")
+
+        if self.method == 'POST' and self.content_length != 0:
+            post_data = self._environ['wsgi.input'].read(self.content_length)
+            self.POST = build_query_dict(post_data)
 
 
 def build_query_dict(query_string):
